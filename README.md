@@ -22,7 +22,7 @@ Krav på systemen:
   * Ubuntu 10.04 amd64
 
 ## puppet
-Installera en puppetmastern.
+Installera puppetmastern.
 
 ### Grundinstallation
 ```
@@ -152,6 +152,12 @@ START=yes
 DAEMON_OPTS=""
 ```
 
+Man kan även lägga in ytterligare parametrar i /etc/puppet.conf, t ex:
+```
+    runinterval = 1800
+    splaylimit = 1800
+    splay = false
+```
 
 
 # 2. resolv.conf
@@ -569,6 +575,8 @@ __/etc/puppet/modules/openssh/manifests/init.pp__:
 class openssh($rootlogin = hiera('root_login')) {
 ```
 
+Testkör på noderna och se att hierarkin fungerar som den ska. Notera att i det här exemplet är deta från hiera default-värdet, och kan köras över från nod-definitionen!
+
 ## Gå vidare med Hiera...
 
 + Lägg till fler variabler för OpenSSH-modulen. 
@@ -590,6 +598,11 @@ Se http://docs.puppetlabs.com/puppetdb/1/index.html
 + Installera, testa, utvärdera
   + Slut på support från Puppet Labs, men kommer troligen leva kvar länge
 Se http://docs.puppetlabs.com/dashboard/
+
+## Testa environments, både i Puppet och Hiera
+Se 
++ http://docs.puppetlabs.com/guides/environment.html
++ http://puppetlabs.com/blog/first-look-installing-and-using-hiera/
 
 ## MCollective
 + Installera, testa, utvärdera
