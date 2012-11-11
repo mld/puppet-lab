@@ -282,10 +282,239 @@ search lab.example.com
 
 Nu kan du inkludera resolvconf-modulen på övriga noder också.
 
+## Mer...
 
+Testa även att göra om source-parametern för filen till en array, t ex:
+```
+source	=> ['puppet:///modules/resolvconf/etc/resolv.conf.$hostname', 'puppet:///modules/resolvconf/etc/resolv.conf']
+```
 
 # 3. OpenSSH
 
+OpenSSH-modulen blir väldigt lik den för resolvconf, men vi låter den ta emot en parameter (rootlogin) för att hantera direktivet PermitRootLogin i /etc/sshd_config och väljer dessutom vilken mall vi ska utgå ifrån beroende på vilken distribution vi kör just nu.
+
+## Modulen
+__/etc/puppet/modules/openssh/manifests/init.pp__:
+```
+class openssh($rootlogin = 'without-password') {
+	case $lsbdistcodename {
+		'lucid': {
+			$conf_template = 'sshd_config.lucid.erb'
+		}
+		'precise': {
+			$conf_template = 'sshd_config.precise.erb'
+		}
+		default: {
+			$conf_template = 'sshd_config.erb'
+		}
+	}
+
+	file { "/etc/ssh/sshd_config":
+		ensure => present,
+		content => template("openssh/${conf_template}"),
+		owner => "root",
+		group => "secore",
+		mode => "644",
+		require => Package["openssh-server"],
+		notify => Service["ssh"],
+	}
+
+	package { "openssh-server":
+		ensure => latest,
+	}
+
+	service { 'ssh':
+		name => "ssh",
+		ensure => running,
+		hasrestart => true,
+		enable => true,
+		require => Package['openssh-server'],
+	}
+}
+```
+
+__/etc/puppet/modules/openssh/templates/sshd_config.precise.erb__:
+```
+# Configuration for ssh server on Ubuntu Precise (12.04)
+# See the sshd_config(5) manpage for details
+
+Port 22
+Protocol 2
+
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+UsePrivilegeSeparation yes
+
+KeyRegenerationInterval 3600
+ServerKeyBits 768
+
+SyslogFacility AUTH
+LogLevel INFO
+
+LoginGraceTime 120
+PermitRootLogin <%= rootlogin %>
+StrictModes yes
+
+RSAAuthentication yes
+PubkeyAuthentication yes
+
+IgnoreRhosts yes
+RhostsRSAAuthentication no
+HostbasedAuthentication no
+
+PermitEmptyPasswords no
+
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+#PasswordAuthentication yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+UsePAM yes
+```
+
+__/etc/puppet/modules/openssh/templates/sshd_config.lucid.erb__:
+```
+# Configuration for ssh server on Ubuntu Lucid (10.04)
+# See the sshd_config(5) manpage for details
+
+Port 22
+Protocol 2
+
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+UsePrivilegeSeparation yes
+
+KeyRegenerationInterval 3600
+ServerKeyBits 768
+
+SyslogFacility AUTH
+LogLevel INFO
+
+LoginGraceTime 120
+PermitRootLogin <%= rootlogin %>
+StrictModes yes
+
+RSAAuthentication yes
+PubkeyAuthentication yes
+
+IgnoreRhosts yes
+RhostsRSAAuthentication no
+HostbasedAuthentication no
+
+PermitEmptyPasswords no
+
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+#PasswordAuthentication yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+UsePAM yes
+```
+
+__/etc/puppet/modules/openssh/templates/sshd_config.erb__:
+```
+# Default configuration for ssh server
+# See the sshd_config(5) manpage for details
+
+Port 22
+Protocol 2
+
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+UsePrivilegeSeparation yes
+
+KeyRegenerationInterval 3600
+ServerKeyBits 768
+
+SyslogFacility AUTH
+LogLevel INFO
+
+LoginGraceTime 120
+PermitRootLogin <%= rootlogin %>
+StrictModes yes
+
+RSAAuthentication yes
+PubkeyAuthentication yes
+
+IgnoreRhosts yes
+RhostsRSAAuthentication no
+HostbasedAuthentication no
+
+PermitEmptyPasswords no
+
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+#PasswordAuthentication yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+UsePAM yes
+```
+
+## site.pp
+
+Här har vi ett nytt sätt att anropa en modul/klass, eftersom vi valt att kunna skicka med parametrar:
+
+```
+$puppetserver = 'puppet.lab.example.com'
+
+node 'puppet.lab.example.com' {
+
+}
+node 'node1.lab.example.com' {
+  include resolvconf
+  class { 'openssh': rootlogin => 'no' }
+}
+node 'node2.lab.example.com' {
+  include resolvconf
+  class { 'openssh': rootlogin => 'without-password' }
+}
+```
+
+## Testa...
+
+Kör puppet agent på noderna:
+```
+node1$ sudo puppet agent --no-daemonize --verbose --onetime
+...
+
+node2$ sudo puppet agent --no-daemonize --verbose --onetime
+...
+```
+
+Kontrollera att du fått ut precise respektive lucid-confen på dom olika noderna.
+
+Lägg till ytterligare en parameter i openssh-klassen, PasswordAuthentication. Testa...
 
 # To be continued...
 
