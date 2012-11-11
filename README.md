@@ -293,6 +293,10 @@ source	=> ['puppet:///modules/resolvconf/etc/resolv.conf.$hostname', 'puppet:///
 
 OpenSSH-modulen blir väldigt lik den för resolvconf, men vi låter den ta emot en parameter (rootlogin) för att hantera direktivet PermitRootLogin i /etc/sshd_config och väljer dessutom vilken mall vi ska utgå ifrån beroende på vilken distribution vi kör just nu.
 
+Vi kommer använda oss av 
++ parameterized classes, se http://docs.puppetlabs.com/learning/modules2.html
++ templates, se http://docs.puppetlabs.com/learning/templates.html
+
 ## Modulen
 __/etc/puppet/modules/openssh/manifests/init.pp__:
 ```
@@ -516,16 +520,85 @@ Kontrollera att du fått ut precise respektive lucid-confen på dom olika nodern
 
 Lägg till ytterligare en parameter i openssh-klassen, PasswordAuthentication. Testa...
 
-# To be continued...
+# 4. Hiera
+Hiera är ett verktyg för att på ett samlat sätt skicka in parametrar till noder, klasser och moduler. Från Puppet 3.0 följer det med automatiskt i puppetinstallationen. Läs mer om Hiera på http://puppetlabs.com/blog/first-look-installing-and-using-hiera/
 
-## Hiera
+Vi sätter upp hiera att hämta information i tre nivåer. Första nivån är om det finns en fil tillgänglig för ett unikt fqdn, t ex node1.lab.example.com.yaml. Nästa nivå är baserad på dist-namn, t ex precise eller lucid. Dom hämtas från lucid.yaml, precise.yaml, ...
+Den tredje nivån är defaultvärden som ligger i common.yaml.
 
-### hiera-gpg backend
+## Förberedelser
+
+### Konfigurerara Hiera
+__/etc/hiera.conf__:
+```
+---
+:hierarchy:
+    - %{fqdn}
+    - %{lsbdistcodename}
+    - common
+:backends:
+    - yaml
+:yaml:
+    :datadir: '/etc/puppet/hieradata'
+```
+
+### Lägg in data i hiera
+__/etc/puppet/hieradata/common.yaml__:
+```
+---
+root_login : 'no'
+```
+
+__/etc/puppet/hieradata/precise.yaml__:
+```
+---
+root_login : 'without-password'
+```
+
+__/etc/puppet/hieradata/node2.lab.example.com.yaml__:
+```
+---
+root_login : 'yes'
+```
+
+### Anpassa OpenSSH-modulen
+Ändra första raden i init.pp så den använder hiera som defaultvärde.
+
+__/etc/puppet/modules/openssh/manifests/init.pp__:
+```
+class openssh($rootlogin = hiera('root_login')) {
+```
+
+## Gå vidare med Hiera...
+
++ Lägg till fler variabler för OpenSSH-modulen. 
++ Anpassa resolvconf-modulen så den tar namnservrar i form av en yaml-array från hiera.
++ Installera och experimentera med hiera-gpg. Se http://www.craigdunn.org/2011/10/secret-variables-in-puppet-with-hiera-and-gpg/
+
+# Mycket mer att titta på
+
+Här är ett par idéer på annat att testa och/eller se över om det över huvud taget är möjligt att bygga ihop.
+## Custom facts i facter
++ http://docs.puppetlabs.com/guides/plugins_in_modules.html
++ http://docs.puppetlabs.com/guides/custom_facts.html
 
 ## PuppetDB
-
-## Puppetmaster som Intermedia-CA
++ Installera, testa, utvärdera
+Se http://docs.puppetlabs.com/puppetdb/1/index.html
 
 ## Puppet Dashboard
++ Installera, testa, utvärdera
+  + Slut på support från Puppet Labs, men kommer troligen leva kvar länge
+Se http://docs.puppetlabs.com/dashboard/
+
+## MCollective
++ Installera, testa, utvärdera
+Se http://docs.puppetlabs.com/mcollective/index.html
+
+# Mer långsiktigt, kanske...
+## Puppetmaster som Intermedia-CA för en intern (eller extern?) CA
+Det råder tveksamheter om det är möjligt i v3.x av Puppet, men det finns requests på att lösa det.
 
 ## Puppet och Kerberos/LDAP
++ Användarhanteringen - använda lokala användare, men utgå från LDAP, med puppet som distributionsform?
++ Använda Kerberos istället för SSL för autenticering mellan puppetmaster och agenter
