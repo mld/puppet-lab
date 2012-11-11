@@ -1,5 +1,7 @@
 # En laboration i puppet
 
+Det mesta av kod och konfiguration som används i det här dokumentet finns även under exempel (https://github.com/mld/puppet-lab/tree/master/exempel) uppdelat steg för steg för att enkelt kunna få en överblick.
+
 # 1. Installation
 I det här steget installerar vi tre Ubuntu-servrar; en puppet-master och två noder med puppet-agenten.
 
@@ -597,6 +599,7 @@ Se http://docs.puppetlabs.com/puppetdb/1/index.html
 ## Puppet Dashboard
 + Installera, testa, utvärdera
   + Slut på support från Puppet Labs, men kommer troligen leva kvar länge
+
 Se http://docs.puppetlabs.com/dashboard/
 
 ## Testa environments, både i Puppet och Hiera
@@ -606,6 +609,7 @@ Se
 
 ## MCollective
 + Installera, testa, utvärdera
+
 Se http://docs.puppetlabs.com/mcollective/index.html
 
 # Mer långsiktigt, kanske...
