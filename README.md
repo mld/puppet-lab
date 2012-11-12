@@ -537,7 +537,7 @@ Den tredje nivån är defaultvärden som ligger i common.yaml.
 ## Förberedelser
 
 ### Konfigurerara Hiera
-__/etc/hiera.yaml__:
+__/etc/puppet/hiera.yaml__:
 ```
 ---
 :hierarchy:
