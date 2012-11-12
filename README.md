@@ -294,7 +294,7 @@ Nu kan du inkludera resolvconf-modulen på övriga noder också.
 
 Testa även att göra om source-parametern för filen till en array, t ex:
 ```
-source	=> ['puppet:///modules/resolvconf/etc/resolv.conf.$hostname', 'puppet:///modules/resolvconf/etc/resolv.conf']
+source	=> ["puppet:///modules/resolvconf/etc/resolv.conf.$hostname", 'puppet:///modules/resolvconf/etc/resolv.conf']
 ```
 
 # 3. OpenSSH
