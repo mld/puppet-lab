@@ -197,13 +197,13 @@ Error: Could not retrieve catalog; skipping run
 
 På puppetmastern kommer du efteråt kunna se något liknande det här:
 ```
-puppet$ puppet cert --list
+puppet$ sudo puppet cert --list
   "node1.lab.example.com" (SHA256) 41:74:15:CE:44:7B:52:06:11:69:98:FC:B7:53:F2:B7:BA:B2:F1:5B:4F:8F:A0:E1:FD:39:10:50:C8:C2:75:BC
   "node2.lab.example.com" (SHA256) 51:84:25:AB:44:7B:52:06:11:69:98:FC:B7:53:F2:B7:BA:B2:F1:5B:4F:8F:A0:E1:FD:39:10:50:C8:C2:75:BC
 ```
 Nästa steg är att signera nod-certifikaten:
 ```
-puppet$ puppet cert --sign node1.lab.example.com
+puppet$ sudo puppet cert --sign node1.lab.example.com
 Signed certificate request for node1.lab.example.com
 Removing file Puppet::SSL::CertificateRequest node1.lab.example.com at '/var/lib/puppet/ssl/ca/requests/node1.lab.example.com.pem'
 ```
