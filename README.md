@@ -62,7 +62,7 @@ templatedir=$confdir/templates
 server=puppet.x.lab.example.com
 report=true
 # Behöver normalt inte sättas, fqdn används default
-certname=node1.x.lab.example.com
+certnamepuppet.x.lab.example.com
 pluginsync = true
 
 [master]
@@ -72,7 +72,7 @@ ssl_client_header = SSL_CLIENT_S_DN
 ssl_client_verify_header = SSL_CLIENT_VERIFY
 
 # behövs inte, men kan vara trevligt om man vet att man har en standbyserver som man kan tänkas växla över till
-dns_alt_names=puppet.lab.example.com
+#dns_alt_names=puppet.lab.example.com
 reports=log
 ```
 
