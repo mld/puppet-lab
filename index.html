@@ -1,0 +1,719 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Puppet-lab by mld</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>Puppet-lab</h1>
+        <p></p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/mld/puppet-lab" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/mld/puppet-lab/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/mld/puppet-lab/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <h1>En laboration i puppet</h1>
+
+<p>Det mesta av kod och konfiguration som används i det här dokumentet finns även under exempel (<a href="https://github.com/mld/puppet-lab/tree/master/exempel">https://github.com/mld/puppet-lab/tree/master/exempel</a>) uppdelat steg för steg för att enkelt kunna få en överblick.</p>
+
+<h1>1. Installation</h1>
+
+<p>I det här steget installerar vi tre Ubuntu-servrar; en puppet-master och två noder med puppet-agenten.</p>
+
+<p>Krav på systemen:</p>
+
+<ul>
+<li>puppet (puppet master)
+
+<ul>
+<li>2G RAM</li>
+<li>2 cores</li>
+<li>6G disk</li>
+<li>Ubuntu 12.04 amd64</li>
+</ul>
+</li>
+<li>node1
+
+<ul>
+<li>1G RAM</li>
+<li>1 core</li>
+<li>4G disk</li>
+<li>Ubuntu 12.04 amd64</li>
+</ul>
+</li>
+<li>node2
+
+<ul>
+<li>1G RAM</li>
+<li>1 core</li>
+<li>4G disk</li>
+<li>Ubuntu 10.04 amd64</li>
+</ul>
+</li>
+</ul><h2>puppet</h2>
+
+<p>Installera puppetmastern.</p>
+
+<h3>Grundinstallation</h3>
+
+<pre><code>client$ virt-viewer --connect qemu+ssh://&lt;user&gt;@kvm02.example.com/system &lt;server&gt; &amp;
+</code></pre>
+
+<p>Har du inte tillgång till virt-viewer, använd en ssh-tunnel och vnc.annars ssh-tunnel+vnc. Ta reda på vilken vnc-display din server har genom </p>
+
+<pre><code>kvm$ virsh vncdisplay &lt;server&gt;
+</code></pre>
+
+<h3>Lägg in puppets paketarkiv</h3>
+
+<pre><code>puppet$ wget http://apt.puppetlabs.com/puppetlabs-release-precise.deb
+puppet$ sudo dpkg -i puppetlabs-release-precise.deb
+</code></pre>
+
+<h3>Installera puppet-agenten och gör grundkonfiguration för mastern</h3>
+
+<p><strong>OBS</strong> Grundkonfiguration för mastern måste göras innan den startas första gången för att den interna CA:n ska bli rätt. Då puppetmastern startar automatiskt när den installeras så konfigurerar vi den i förväg.</p>
+
+<pre><code>puppet$ sudo apt-get update
+puppet$ sudo apt-get install puppet
+puppet$ sudo vim /etc/puppet/puppet.conf
+</code></pre>
+
+<p><strong>/etc/puppet/puppet.conf</strong> för puppetmaster:</p>
+
+<pre><code>[main]
+logdir=/var/log/puppet
+vardir=/var/lib/puppet
+ssldir=/var/lib/puppet/ssl
+rundir=/var/run/puppet
+factpath=$vardir/lib/facter
+templatedir=$confdir/templates
+
+# behövs inte alltid, men är en fördel att ha. default är puppet.&lt;domän&gt;
+server=puppet.x.lab.example.com
+report=true
+# Behöver normalt inte sättas, fqdn används default
+certnamepuppet.x.lab.example.com
+pluginsync = true
+
+[master]
+# These are needed when the puppetmaster is run by passenger
+# and can safely be removed if webrick is used.
+ssl_client_header = SSL_CLIENT_S_DN 
+ssl_client_verify_header = SSL_CLIENT_VERIFY
+
+# behövs inte, men kan vara trevligt om man vet att man har en standbyserver som man kan tänkas växla över till
+#dns_alt_names=puppet.lab.example.com
+reports=log
+</code></pre>
+
+<p><strong>Valfritt:</strong> För att puppet-agenten ska starta automatiskt behöver även /etc/default/puppet ändras:</p>
+
+<pre><code># Defaults for puppet - sourced by /etc/init.d/puppet
+
+# Start puppet on boot?
+START=yes
+
+# Startup options
+DAEMON_OPTS=""
+</code></pre>
+
+<h3>Installera puppetmaster</h3>
+
+<pre><code>puppet$ sudo apt-get install puppetmaster
+</code></pre>
+
+<h2>node1 och node2</h2>
+
+<p>Installera bägge noderna.</p>
+
+<h3>Grundinstallation</h3>
+
+<pre><code>client$ virt-viewer --connect qemu+ssh://&lt;user&gt;@kvm02.example.com/system &lt;server&gt; &amp;
+</code></pre>
+
+<p>Har du inte tillgång till virt-viewer, använd en ssh-tunnel och vnc.annars ssh-tunnel+vnc. Ta reda på vilken vnc-display din server har genom </p>
+
+<pre><code>kvm$ virsh vncdisplay &lt;server&gt;
+</code></pre>
+
+<h3>Lägg in puppets paketarkiv</h3>
+
+<p>Initiera noderna med puppet och en grundkonfiguration.</p>
+
+<h3>node1 (Ubuntu 12.04)</h3>
+
+<pre><code>node1$ wget http://apt.puppetlabs.com/puppetlabs-release-precise.deb
+node1$ sudo dpkg -i puppetlabs-release-precise.deb
+node1$ sudo apt-get update
+node1$ sudo apt-get install puppet
+node1$ sudo vim /etc/puppet/puppet.conf
+</code></pre>
+
+<h3>node2 (Ubuntu 10.04)</h3>
+
+<pre><code>node2$ wget http://apt.puppetlabs.com/puppetlabs-release-lucid.deb
+node2$ sudo dpkg -i puppetlabs-release-lucid.deb
+node2$ sudo apt-get update
+node2$ sudo apt-get install puppet
+node2$ sudo vim /etc/puppet/puppet.conf
+</code></pre>
+
+<p><strong>/etc/puppet/puppet.conf</strong> för noder:</p>
+
+<pre><code>[main]
+logdir=/var/log/puppet
+vardir=/var/lib/puppet
+ssldir=/var/lib/puppet/ssl
+rundir=/var/run/puppet
+factpath=$vardir/lib/facter
+templatedir=$confdir/templates
+
+# behövs inte alltid, men är en fördel att ha. default är puppet.&lt;domän&gt;
+server=puppet.x.lab.example.com
+report=true
+# Behöver normalt inte sättas, fqdn används default
+certname=node1.x.lab.example.com
+pluginsync = true
+</code></pre>
+
+<p><strong>Valfritt:</strong> För att puppet-agenten ska starta automatiskt behöver även /etc/default/puppet ändras:</p>
+
+<pre><code># Defaults for puppet - sourced by /etc/init.d/puppet
+
+# Start puppet on boot?
+START=yes
+
+# Startup options
+DAEMON_OPTS=""
+</code></pre>
+
+<p>Man kan även lägga in ytterligare parametrar i /etc/puppet.conf, t ex:</p>
+
+<pre><code>    runinterval = 1800
+    splaylimit = 1800
+    splay = false
+</code></pre>
+
+<h1>2. resolv.conf</h1>
+
+<p>I den här delen ansluter vi noderna till puppet-mastern, börjar med en do-nothing-conf för puppet och lägger sedan till en modul som hanterar /etc/resolv.conf.</p>
+
+<h2>Anslut noderna till puppetmastern</h2>
+
+<p>På node1 respektive node2, kör följande:</p>
+
+<pre><code>sudo puppet agent --no-daemonize --verbose --waitforcert=10
+</code></pre>
+
+<p>Det här skapar en privat nyckel för noden och i samarbete med mastern en csr, sen väntar klienten på att få tillbaka ett certifikat från mastern.</p>
+
+<p>Exempelkörning:</p>
+
+<pre><code>node1$ sudo puppet agent --no-daemonize --verbose --waitforcert=10
+Info: Creating a new SSL key for node1.lab.example.com
+Error: Could not request certificate: Connection refused - connect(2)
+Error: Could not request certificate: Connection refused - connect(2)
+Error: Could not request certificate: Connection refused - connect(2)
+Info: Caching certificate for ca
+Info: Creating a new SSL certificate request for node1.lab.example.com
+Info: Certificate Request fingerprint (SHA256): 41:74:15:CE:44:7B:52:06:11:69:98:FC:B7:53:F2:B7:BA:B2:F1:5B:4F:8F:A0:E1:FD:39:10:50:C8:C2:75:BC
+Did not receive certificate
+
+Did not receive certificate
+Info: Caching certificate for node1.lab.example.com
+Starting Puppet client version 3.0.1
+Info: Caching certificate_revocation_list for ca
+Info: Retrieving plugin
+Using cached catalog
+Error: Could not retrieve catalog; skipping run
+</code></pre>
+
+<p>På puppetmastern kommer du efteråt kunna se något liknande det här:</p>
+
+<pre><code>puppet$ sudo puppet cert --list
+  "node1.lab.example.com" (SHA256) 41:74:15:CE:44:7B:52:06:11:69:98:FC:B7:53:F2:B7:BA:B2:F1:5B:4F:8F:A0:E1:FD:39:10:50:C8:C2:75:BC
+  "node2.lab.example.com" (SHA256) 51:84:25:AB:44:7B:52:06:11:69:98:FC:B7:53:F2:B7:BA:B2:F1:5B:4F:8F:A0:E1:FD:39:10:50:C8:C2:75:BC
+</code></pre>
+
+<p>Nästa steg är att signera nod-certifikaten:</p>
+
+<pre><code>puppet$ sudo puppet cert --sign node1.lab.example.com
+Signed certificate request for node1.lab.example.com
+Removing file Puppet::SSL::CertificateRequest node1.lab.example.com at '/var/lib/puppet/ssl/ca/requests/node1.lab.example.com.pem'
+</code></pre>
+
+<p>Nu pratar förhoppningsvis bägge noderna med puppetmastern och vi är redo att göra något på riktigt!</p>
+
+<h2>Skapa grundkonfiguration för noderna</h2>
+
+<p><strong>/etc/puppet/manifests/site.pp</strong>:</p>
+
+<pre><code>$puppetserver = 'puppet.lab.example.com'
+
+node 'puppet.lab.example.com' {
+
+}
+node 'node1.lab.example.com' {
+
+}
+node 'node2.lab.example.com' {
+
+}
+
+</code></pre>
+
+<h2>Bygg resolvconf-modulen</h2>
+
+<p><strong>/etc/puppet/modules/resolvconf/manifests/init.pp</strong>:</p>
+
+<pre><code>class resolvconf {
+
+    package { 'resolvconf':
+        ensure  =&gt; purged
+    }
+
+    file { "/etc/resolv.conf":
+        source  =&gt; 'puppet:///modules/resolvconf/etc/resolv.conf',
+        owner   =&gt; root,
+        group   =&gt; root,
+        mode    =&gt; 0644,
+        ensure  =&gt; file,
+        require =&gt; Package['resolvconf'],
+    }
+}
+</code></pre>
+
+<p><strong>/etc/puppet/modules/resolvconf/files/etc/resolv.conf</strong>:</p>
+
+<pre><code>nameserver 8.8.8.8
+nameserver 8.8.4.4
+search lab.example.com
+</code></pre>
+
+<p>Inkludera resolvconf-modulen på en nod.
+<strong>/etc/puppet/manifests/site.pp:</strong></p>
+
+<pre><code>$puppetserver = 'puppet.lab.example.com'
+
+node 'puppet.lab.example.com' {
+
+}
+node 'node1.lab.example.com' {
+  include resolvconf
+}
+node 'node2.lab.example.com' {
+
+}
+</code></pre>
+
+<p>Kör agenten en gång på node1 för att se att det fungerar:</p>
+
+<pre><code>node1$ sudo puppet agent --no-daemonize --verbose --onetime
+Info: Retrieving plugin
+Info: Caching catalog for node1.lab.example.com
+Info: Applying configuration version '1352643134'
+Info: FileBucket got a duplicate file {md5}a3833cde72f68a4da35d51db380b8978
+Info: /Stage[main]/Resolvconf/File[/etc/resolv.conf]: Filebucketed /etc/resolv.conf to puppet with sum a3833cde72f68a4da35d51db380b8978
+/Stage[main]/Resolvconf/File[/etc/resolv.conf]/content: content changed '{md5}a3833cde72f68a4da35d51db380b8978' to '{md5}84e65d653359f3bf2328139427d085b9'
+Finished catalog run in 0.30 seconds
+
+node1$ cat /etc/resolv.conf 
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+search lab.example.com
+</code></pre>
+
+<p>Nu kan du inkludera resolvconf-modulen på övriga noder också.</p>
+
+<h2>Mer...</h2>
+
+<p>Testa även att göra om source-parametern för filen till en array, t ex:</p>
+
+<pre><code>source  =&gt; ["puppet:///modules/resolvconf/etc/resolv.conf.$hostname", 'puppet:///modules/resolvconf/etc/resolv.conf']
+</code></pre>
+
+<h1>3. OpenSSH</h1>
+
+<p>OpenSSH-modulen blir väldigt lik den för resolvconf, men vi låter den ta emot en parameter (rootlogin) för att hantera direktivet PermitRootLogin i /etc/sshd_config och väljer dessutom vilken mall vi ska utgå ifrån beroende på vilken distribution vi kör just nu.</p>
+
+<p>Vi kommer använda oss av </p>
+
+<ul>
+<li>parameterized classes, se <a href="http://docs.puppetlabs.com/learning/modules2.html">http://docs.puppetlabs.com/learning/modules2.html</a>
+</li>
+<li>templates, se <a href="http://docs.puppetlabs.com/learning/templates.html">http://docs.puppetlabs.com/learning/templates.html</a>
+</li>
+</ul><h2>Modulen</h2>
+
+<p><strong>/etc/puppet/modules/openssh/manifests/init.pp</strong>:</p>
+
+<pre><code>class openssh($rootlogin = 'without-password') {
+    case $lsbdistcodename {
+        'lucid': {
+            $conf_template = 'sshd_config.lucid.erb'
+        }
+        'precise': {
+            $conf_template = 'sshd_config.precise.erb'
+        }
+        default: {
+            $conf_template = 'sshd_config.erb'
+        }
+    }
+
+    file { "/etc/ssh/sshd_config":
+        ensure =&gt; present,
+        content =&gt; template("openssh/${conf_template}"),
+        owner =&gt; "root",
+        group =&gt; "root",
+        mode =&gt; "644",
+        require =&gt; Package["openssh-server"],
+        notify =&gt; Service["ssh"],
+    }
+
+    package { "openssh-server":
+        ensure =&gt; latest,
+    }
+
+    service { 'ssh':
+        name =&gt; "ssh",
+        ensure =&gt; running,
+        hasrestart =&gt; true,
+        enable =&gt; true,
+        require =&gt; Package['openssh-server'],
+    }
+}
+</code></pre>
+
+<p><strong>/etc/puppet/modules/openssh/templates/sshd_config.precise.erb</strong>:</p>
+
+<pre><code># Configuration for ssh server on Ubuntu Precise (12.04)
+# See the sshd_config(5) manpage for details
+
+Port 22
+Protocol 2
+
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+UsePrivilegeSeparation yes
+
+KeyRegenerationInterval 3600
+ServerKeyBits 768
+
+SyslogFacility AUTH
+LogLevel INFO
+
+LoginGraceTime 120
+PermitRootLogin &lt;%= rootlogin %&gt;
+StrictModes yes
+
+RSAAuthentication yes
+PubkeyAuthentication yes
+
+IgnoreRhosts yes
+RhostsRSAAuthentication no
+HostbasedAuthentication no
+
+PermitEmptyPasswords no
+
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+#PasswordAuthentication yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+UsePAM yes
+</code></pre>
+
+<p><strong>/etc/puppet/modules/openssh/templates/sshd_config.lucid.erb</strong>:</p>
+
+<pre><code># Configuration for ssh server on Ubuntu Lucid (10.04)
+# See the sshd_config(5) manpage for details
+
+Port 22
+Protocol 2
+
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+UsePrivilegeSeparation yes
+
+KeyRegenerationInterval 3600
+ServerKeyBits 768
+
+SyslogFacility AUTH
+LogLevel INFO
+
+LoginGraceTime 120
+PermitRootLogin &lt;%= rootlogin %&gt;
+StrictModes yes
+
+RSAAuthentication yes
+PubkeyAuthentication yes
+
+IgnoreRhosts yes
+RhostsRSAAuthentication no
+HostbasedAuthentication no
+
+PermitEmptyPasswords no
+
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+#PasswordAuthentication yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+UsePAM yes
+</code></pre>
+
+<p><strong>/etc/puppet/modules/openssh/templates/sshd_config.erb</strong>:</p>
+
+<pre><code># Default configuration for ssh server
+# See the sshd_config(5) manpage for details
+
+Port 22
+Protocol 2
+
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_dsa_key
+UsePrivilegeSeparation yes
+
+KeyRegenerationInterval 3600
+ServerKeyBits 768
+
+SyslogFacility AUTH
+LogLevel INFO
+
+LoginGraceTime 120
+PermitRootLogin &lt;%= rootlogin %&gt;
+StrictModes yes
+
+RSAAuthentication yes
+PubkeyAuthentication yes
+
+IgnoreRhosts yes
+RhostsRSAAuthentication no
+HostbasedAuthentication no
+
+PermitEmptyPasswords no
+
+ChallengeResponseAuthentication no
+
+# Change to no to disable tunnelled clear text passwords
+#PasswordAuthentication yes
+
+X11Forwarding yes
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+
+AcceptEnv LANG LC_*
+
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+UsePAM yes
+</code></pre>
+
+<h2>site.pp</h2>
+
+<p>Här har vi ett nytt sätt att anropa en modul/klass, eftersom vi valt att kunna skicka med parametrar:</p>
+
+<pre><code>$puppetserver = 'puppet.lab.example.com'
+
+node 'puppet.lab.example.com' {
+
+}
+node 'node1.lab.example.com' {
+  include resolvconf
+  class { 'openssh': rootlogin =&gt; 'no' }
+}
+node 'node2.lab.example.com' {
+  include resolvconf
+  class { 'openssh': rootlogin =&gt; 'without-password' }
+}
+</code></pre>
+
+<h2>Testa...</h2>
+
+<p>Kör puppet agent på noderna:</p>
+
+<pre><code>node1$ sudo puppet agent --no-daemonize --verbose --onetime
+...
+
+node2$ sudo puppet agent --no-daemonize --verbose --onetime
+...
+</code></pre>
+
+<p>Kontrollera att du fått ut precise respektive lucid-confen på dom olika noderna.</p>
+
+<p>Lägg till ytterligare en parameter i openssh-klassen, PasswordAuthentication. Testa...</p>
+
+<h1>4. Hiera</h1>
+
+<p>Hiera är ett verktyg för att på ett samlat sätt skicka in parametrar till noder, klasser och moduler. Från Puppet 3.0 följer det med automatiskt i puppetinstallationen. Läs mer om Hiera på <a href="http://puppetlabs.com/blog/first-look-installing-and-using-hiera/">http://puppetlabs.com/blog/first-look-installing-and-using-hiera/</a></p>
+
+<p>Vi sätter upp hiera att hämta information i tre nivåer. Första nivån är om det finns en fil tillgänglig för ett unikt fqdn, t ex node1.lab.example.com.yaml. Nästa nivå är baserad på dist-namn, t ex precise eller lucid. Dom hämtas från lucid.yaml, precise.yaml, ...
+Den tredje nivån är defaultvärden som ligger i common.yaml.</p>
+
+<h2>Förberedelser</h2>
+
+<h3>Konfigurerara Hiera</h3>
+
+<p><strong>/etc/puppet/hiera.yaml</strong>:</p>
+
+<pre><code>---
+:hierarchy:
+    - %{fqdn}
+    - %{lsbdistcodename}
+    - common
+:backends:
+    - yaml
+:yaml:
+    :datadir: '/etc/puppet/hieradata'
+</code></pre>
+
+<h3>Lägg in data i hiera</h3>
+
+<p><strong>/etc/puppet/hieradata/common.yaml</strong>:</p>
+
+<pre><code>---
+root_login : 'no'
+</code></pre>
+
+<p><strong>/etc/puppet/hieradata/precise.yaml</strong>:</p>
+
+<pre><code>---
+root_login : 'without-password'
+</code></pre>
+
+<p><strong>/etc/puppet/hieradata/node2.lab.example.com.yaml</strong>:</p>
+
+<pre><code>---
+root_login : 'yes'
+</code></pre>
+
+<h3>Anpassa OpenSSH-modulen</h3>
+
+<p>Ändra första raden i init.pp så den använder hiera som defaultvärde.</p>
+
+<p><strong>/etc/puppet/modules/openssh/manifests/init.pp</strong>:</p>
+
+<pre><code>class openssh($rootlogin = hiera('root_login')) {
+</code></pre>
+
+<p>Testkör på noderna och se att hierarkin fungerar som den ska. Notera att i det här exemplet är deta från hiera default-värdet, och kan köras över från nod-definitionen!</p>
+
+<h2>Gå vidare med Hiera...</h2>
+
+<ul>
+<li>Lägg till fler variabler för OpenSSH-modulen. </li>
+<li>Anpassa resolvconf-modulen så den tar namnservrar i form av en yaml-array från hiera.</li>
+<li>Installera och experimentera med hiera-gpg. Se <a href="http://www.craigdunn.org/2011/10/secret-variables-in-puppet-with-hiera-and-gpg/">http://www.craigdunn.org/2011/10/secret-variables-in-puppet-with-hiera-and-gpg/</a>
+</li>
+</ul><h1>Mycket mer att titta på</h1>
+
+<p>Här är ett par idéer på annat att testa och/eller se över om det över huvud taget är möjligt att bygga ihop.</p>
+
+<h2>Custom facts i facter</h2>
+
+<ul>
+<li><a href="http://docs.puppetlabs.com/guides/plugins_in_modules.html">http://docs.puppetlabs.com/guides/plugins_in_modules.html</a></li>
+<li><a href="http://docs.puppetlabs.com/guides/custom_facts.html">http://docs.puppetlabs.com/guides/custom_facts.html</a></li>
+</ul><h2>PuppetDB</h2>
+
+<ul>
+<li>Installera, testa, utvärdera
+Se <a href="http://docs.puppetlabs.com/puppetdb/1/index.html">http://docs.puppetlabs.com/puppetdb/1/index.html</a>
+</li>
+</ul><h2>Puppet Dashboard</h2>
+
+<ul>
+<li>Installera, testa, utvärdera
+
+<ul>
+<li>Slut på support från Puppet Labs, men kommer troligen leva kvar länge</li>
+</ul>
+</li>
+</ul><p>Se <a href="http://docs.puppetlabs.com/dashboard/">http://docs.puppetlabs.com/dashboard/</a></p>
+
+<h2>Testa environments, både i Puppet och Hiera</h2>
+
+<p>Se </p>
+
+<ul>
+<li><a href="http://docs.puppetlabs.com/guides/environment.html">http://docs.puppetlabs.com/guides/environment.html</a></li>
+<li><a href="http://puppetlabs.com/blog/first-look-installing-and-using-hiera/">http://puppetlabs.com/blog/first-look-installing-and-using-hiera/</a></li>
+</ul><h2>MCollective</h2>
+
+<ul>
+<li>Installera, testa, utvärdera</li>
+</ul><p>Se <a href="http://docs.puppetlabs.com/mcollective/index.html">http://docs.puppetlabs.com/mcollective/index.html</a></p>
+
+<h1>Mer långsiktigt, kanske...</h1>
+
+<h2>Puppetmaster som Intermedia-CA för en intern (eller extern?) CA</h2>
+
+<p>Det råder tveksamheter om det är möjligt i v3.x av Puppet, men det finns requests på att lösa det.</p>
+
+<h2>Puppet och Kerberos/LDAP</h2>
+
+<ul>
+<li>Användarhanteringen - använda lokala användare, men utgå från LDAP, med puppet som distributionsform?</li>
+<li>Använda Kerberos istället för SSL för autenticering mellan puppetmaster och agenter</li>
+</ul>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/mld">mld</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
