@@ -1,0 +1,5 @@
+
+# Local hosts
+192.168.50.10	puppet.lab puppet
+192.168.50.101	node1.lab node1
+192.168.50.102	node2.lab node2
