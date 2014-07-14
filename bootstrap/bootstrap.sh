@@ -19,6 +19,13 @@ apt-get update
 apt-get -y install vim-nox language-pack-en git puppet
 locale-gen UTF-8
 
-# puppet module install --modulepath=/vagrant/puppet/modules puppetlabs-ruby
-# sudo puppet apply --modulepath=/vagrant/puppet/modules -e "include ruby"
-# puppet module install --modulepath=/vagrant/puppet/modules zack-r10k
+# puppet modules requred for initial setup:
+#  stephenrjohnson-puppet zack-r10k
+# Install modules:
+#  puppet module install --modulepath=/vagrant/puppet/modules <modulename>
+# Install puppet:
+#  sudo puppet apply -e "class{'puppet::repo::puppetlabs': } Class['puppet::repo::puppetlabs'] -> Package <| |> class { 'puppetdb': }  class { 'puppet::master': storeconfigs => true, environments => 'directory' }" --modulepath=/vagrant/puppet/modules
+# Install r10k:
+#  sudo puppet apply -e "class { 'r10k': remote => 'https://github.com/mld/puppet-lab-r10k.git', configfile => '/etc/puppet/r10k.yaml', manage_configfile_symlink => true, configfile_symlink => '/etc/r10k.yaml' }" --modulepath=/vagrant/puppet/modules
+# Deploy with r10k
+#  sudo r10k deploy environment
