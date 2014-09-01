@@ -22,3 +22,4 @@ locale-gen UTF-8
 # puppet module install --modulepath=/vagrant/puppet/modules puppetlabs-ruby
 # sudo puppet apply --modulepath=/vagrant/puppet/modules -e "include ruby"
 # puppet module install --modulepath=/vagrant/puppet/modules zack-r10k
+# sudo puppet apply --modulepath=/vagrant/puppet/modules -e "class { 'r10k': remote => 'git@github.com:someuser/puppet.git', }"
