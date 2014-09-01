@@ -7,7 +7,7 @@ class { 'r10k':
     },
     'hiera' => {
       'remote'  => 'git@bitbucket.org:mikaelld/r10kenvhiera.git',
-      'basedir' => "${::settings::confdir}"/hiera,
+      'basedir' => "${::settings::confdir}/hiera",
       'prefix'  => false,
     }
   },

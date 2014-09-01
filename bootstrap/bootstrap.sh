@@ -36,3 +36,7 @@ locale-gen UTF-8
 #  sudo r10k deploy environment
 #
 # sudo puppet apply /vagrant/puppet/r10k_installation.pp --modulepath=/vagrant/puppet/modules
+
+# for MOD in stephenrjohnson/puppet zack/r10k hunner/hiera; do sudo puppet module install $MOD; done
+# sudo puppet apply r10k_installation.pp
+# sudo -H r10k deploy environment -pv
