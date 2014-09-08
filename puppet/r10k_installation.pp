@@ -1,12 +1,12 @@
 class { 'r10k':
   sources           => {
     'puppet' => {
-      'remote'  => 'git@bitbucket.org:mikaelld/r10kenv.git',
+      'remote'  => 'https://github.com/mld/r10k-puppet.git',
       'basedir' => "${::settings::confdir}/environments",
       'prefix'  => false,
     },
     'hiera' => {
-      'remote'  => 'git@bitbucket.org:mikaelld/r10kenvhiera.git',
+      'remote'  => 'https://github.com/mld/r10k-hiera.git',
       'basedir' => "${::settings::confdir}/hiera",
       'prefix'  => false,
     }
