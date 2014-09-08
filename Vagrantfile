@@ -10,7 +10,7 @@ domain = 'lab'
 nodes = [
   {:hostname => 'puppet', :ip => '192.168.50.10',  :box => 'ubuntu/trusty64',  :cm => 'shell', :ram => 512},
   {:hostname => 'node1',  :ip => '192.168.50.101', :box => 'ubuntu/trusty64',  :cm => 'shell' },
-  {:hostname => 'node2',  :ip => '192.168.50.102', :box => 'ubuntu/precise64', :cm => 'shell' },
+  {:hostname => 'node2',  :ip => '192.168.50.102', :box => 'ubuntu/trusty64',  :cm => 'shell' },
 ]
 
 # Begin configuring our puppet lab network
