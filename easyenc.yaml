@@ -1,0 +1,6 @@
+--
+default:
+  environment: unknown
+puppet.lab:
+  environment: production
+

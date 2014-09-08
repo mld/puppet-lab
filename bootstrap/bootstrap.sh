@@ -19,6 +19,12 @@ apt-get update
 apt-get -y install vim-nox language-pack-en git puppet
 locale-gen UTF-8
 
+cp /vagrant/easyenc.py /usr/local/bin/easyenc.py
+chmod +x /usr/local/bin/easyenc.py
+
+echo "#node_terminus = exec" >> /etc/puppet.conf
+echo "#external_nodes = /usr/local/bin/easyenc.py /etc/puppet/easyenc.yaml" >> /etc/puppet.conf
+
 # Install puppet:
 #  sudo puppet apply -e "class{'puppet::repo::puppetlabs': } Class['puppet::repo::puppetlabs'] -> Package <| |> class { 'puppetdb': }  class { 'puppet::master': storeconfigs => true, environments => 'directory' }" --modulepath=/vagrant/puppet/modules
 
